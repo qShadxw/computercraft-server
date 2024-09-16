@@ -1,41 +1,55 @@
 const fs = require("fs")
 const http = require('http')
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 const computerId = "1a01ed6f-ccf4-437f-aa93-5cfe98da3170";
+const server = http.createServer((req, res) => {})
+const jsonFiles = [
+    __dirname + "/authentications/players.json",
+    __dirname + "/authentications/doors.json"
+]
+const Logger = {
+    getTimeStamp: () => {
+        let date = new Date();
+
+        return `${date.getFullYear()}-${date.getMonth().toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+    },
+    log: (message) => {
+        console.log(`${Logger.getTimeStamp()} | ${message}`)
+    }
+}
+
 let playerAuthentication = {};
 let doorAuthentication = {};
-const server = http.createServer((req, res) => {})
 
-function LoadJson()
+jsonFiles.forEach(fileDir =>
 {
-    playerAuthentication = JSON.parse(fs.readFileSync(__dirname + "/authentications/players.json", 'utf8'))
-    doorAuthentication = JSON.parse(fs.readFileSync(__dirname + "/authentications/doors.json", 'utf8'))
+   fs.watchFile(fileDir, (current, previous) =>
+   {
+       if (fileDir.endsWith("players.json"))
+       {
+           playerAuthentication = JSON.parse(fs.readFileSync(fileDir, 'utf8'))
+       }
+       if (fileDir.endsWith("doors.json"))
+       {
+           doorAuthentication = JSON.parse(fs.readFileSync(fileDir, 'utf8'))
+       }
 
-    console.log("Reloaded Json Files!")
-}
+       Logger.log(`Successfully reloaded ${fileDir}`)
+   })
+});
 
 server.listen(8080, () =>
 {
-    LoadJson();
     const { address, port } = server.address()
-    console.log(`Server is listening on: http://${address}:${port}`)
+    Logger.log(`Server is listening on: http://${address}:${port}`)
 })
 
 server.on("request", (req, res) =>
 {
-    console.log(req.headers)
-
-    if (req.headers["command"] === "reload")
-    {
-        LoadJson()
-        res.end("Complete!")
-
-        return
-    }
+    Logger.log(req.headers)
 
     if (req.headers["user-agent"] !== computerId)
     {
-        console.log("Not Authenticated!")
+        Logger.log("Not Authenticated!")
         res.end("false")
 
         return
@@ -45,16 +59,16 @@ server.on("request", (req, res) =>
     const authenticationLevel = playerAuthentication[username] ?? 0
     const doorLevel = doorAuthentication[door] ?? 0
 
-    console.log(`Username: ${username}, AuthenticationLevel: ${authenticationLevel}, DoorLevel: ${doorLevel}`)
+    Logger.log(`Username: ${username}, AuthenticationLevel: ${authenticationLevel}, DoorLevel: ${doorLevel}`)
 
     if (authenticationLevel >= doorLevel)
     {
-        console.log("Authenticated!")
+        Logger.log("Authenticated!")
         res.end("true")
 
         return
     }
 
-    console.log("Not Authenticated!")
+    Logger.log("Not Authenticated!")
     res.end("false");
 })
