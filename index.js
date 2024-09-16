@@ -10,7 +10,7 @@ const Logger = {
     getTimeStamp: () => {
         let date = new Date();
 
-        return `${date.getFullYear()}-${date.getMonth().toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+        return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
     },
     log: (message) => {
         console.log(`${Logger.getTimeStamp()} | ${message}`)
